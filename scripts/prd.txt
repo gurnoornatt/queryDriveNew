@@ -1,0 +1,168 @@
+<context>
+# Overview  
+Courier Optimizer is a lightweight backend service that helps restaurants reduce delivery costs by automatically choosing the cheaper courier between DoorDash Drive and Uber Direct for each order placed on their direct website.
+
+The system will provide a simple API that enables restaurants to:
+1. Get quotes from both delivery services
+2. Automatically dispatch to the cheaper option
+3. Track delivery status via webhooks
+4. Generate reports on savings and delivery performance
+
+# Core Features  
+1. DoorDash Drive Integration
+   - Functionality for estimating delivery costs
+   - Creating delivery orders
+   - Processing webhook notifications for status updates
+   - HMAC verification for security
+
+2. Uber Direct Integration
+   - Functionality for estimating delivery costs 
+   - Creating delivery orders
+   - Processing webhook notifications for status updates
+   - OAuth token caching and signature verification
+
+3. Courier Optimizer API
+   - Comparison of delivery service fees
+   - Automatic dispatch to the cheaper option
+   - Delivery status tracking
+   - Reporting on savings and delivery metrics
+
+# User Experience  
+Target Users: Restaurant owners and their direct ordering systems
+
+Key User Flows:
+1. Restaurant's ordering system requests a delivery quote
+2. System returns the cheaper option's details
+3. Restaurant confirms dispatch
+4. Restaurant can track delivery status
+5. Restaurant reviews cost-saving reports
+</context>
+<PRD>
+# Technical Architecture  
+## Technology Stack
+- Backend: TypeScript
+- Deployment: Cloudflare Workers or Vercel (whichever is easier to implement)
+- Database: Supabase Postgres
+- Testing: Vitest + Mock Service Worker (MSW)
+- Load Testing: k6
+- Security Scanning: OWASP ZAP
+
+## System Components
+1. Client Libraries
+   - `clients/doordash.ts`: Interface for DoorDash Drive API
+   - `clients/uber.ts`: Interface for Uber Direct API
+
+2. API Endpoints
+   - `POST /v1/delivery/quote`: Compare fees from both providers
+   - `POST /v1/delivery/dispatch`: Select provider and create delivery
+   - `GET /v1/delivery/:id/status`: Check delivery status
+   - `GET /v1/delivery/report`: Generate admin reports
+   
+3. Webhook Handlers
+   - `/webhooks/doordash`: Process DoorDash status updates
+   - `/webhooks/uber`: Process Uber status updates
+
+4. Database Structure
+   - `deliveries`: Main delivery records
+   - `provider_quotes`: Quote information from each provider
+   - `restaurants`: Restaurant data
+
+## Security
+- Environment variables for secrets (DD_API_KEY, UBER_CLIENT_ID, etc.)
+- HMAC verification for DoorDash webhooks
+- OAuth token caching with signature verification for Uber
+- Supabase Row Level Security (RLS)
+- PII redaction in logs (no names/phones/addresses)
+
+## Observability
+- OpenTelemetry traces
+- Cloudflare Workers logs or Vercel logs
+
+# Development Roadmap  
+## Phase 1: DoorDash Drive Integration
+1. Build `clients/doordash.ts`
+   - Implement `estimate()` function
+   - Implement `createDelivery()` function
+   - Implement `parseWebhook()` function
+2. Create `/webhooks/doordash` route
+   - Implement HMAC verification
+   - Process status updates
+3. Write unit and integration tests
+   - Use mock data for testing
+   - Ensure all tests pass before proceeding
+
+## Phase 2: Uber Direct Integration
+1. Build `clients/uber.ts`
+   - Implement `estimate()` function 
+   - Implement `createDelivery()` function
+   - Implement `parseWebhook()` function
+2. Create `/webhooks/uber` route
+   - Implement OAuth token caching
+   - Implement signature verification
+   - Process status updates
+3. Write unit and integration tests
+   - Use mock data for testing
+   - Ensure all tests pass before proceeding
+
+## Phase 3: Courier Optimizer API
+1. Create REST endpoints
+   - Implement `POST /v1/delivery/quote`
+   - Implement `POST /v1/delivery/dispatch`
+   - Implement `GET /v1/delivery/:id/status`
+   - Implement `GET /v1/delivery/report`
+2. Implement Supabase database integration
+   - Set up `deliveries` table
+   - Set up `provider_quotes` table
+   - Set up `restaurants` table
+3. Configure Supabase Row Level Security
+4. Implement webhook ingestion logic for delivery status updates
+5. Configure logging with PII redaction
+
+# Logical Dependency Chain
+1. External API client libraries (DoorDash, then Uber)
+2. Webhook handlers for delivery status updates
+3. Database schema setup and integration
+4. Quote comparison and dispatch logic
+5. Status tracking and reporting features
+
+The development will follow a strict phased approach:
+- Phase 1 must be completed and tested before starting Phase 2
+- Phase 2 must be completed and tested before starting Phase 3
+- Each component should be buildable and testable independently
+
+# Risks and Mitigations  
+## Technical Challenges
+- **Risk**: API rate limits from DoorDash or Uber
+  **Mitigation**: Implement proper error handling and backoff strategies
+
+- **Risk**: Webhook processing failures
+  **Mitigation**: Store raw webhook data for replay capability
+
+- **Risk**: OAuth token expiration
+  **Mitigation**: Proper token caching and refresh mechanism
+
+## Resource Constraints
+- **Risk**: Performance issues under high load
+  **Mitigation**: Implement load testing to ensure 50 RPS with p95 latency < 1 sec
+
+- **Risk**: Security vulnerabilities
+  **Mitigation**: Run OWASP ZAP baseline scan before production deployment
+
+# Manual Setup Requirements
+1. DoorDash Drive production & sandbox API keys (must be manually obtained)
+2. Uber Direct "Direct Fulfillment" API scope request (must be manually requested)
+3. Webhook URL configuration in both provider dashboards
+4. Domain DNS setup (e.g., api.mydomain.com) for Cloudflare Workers or Vercel
+
+# Appendix  
+## Out of Scope
+- Payment processing
+- User interface components
+- Quote caching beyond OAuth token TTL
+- Additional database tables beyond those specified
+
+## Success Criteria
+- System successfully selects the cheaper delivery provider for each order
+- All tests pass, including security and load tests
+- API meets performance requirements (50 RPS with p95 latency < 1 sec)
+</PRD> 
